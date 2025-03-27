@@ -43,7 +43,7 @@ import org.bukkit.plugin.TimedRegisteredListener;
 import org.bukkit.plugin.UnknownDependencyException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.mohistmc.org.yaml.snakeyaml.error.YAMLException;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * Represents a Java plugin loader, allowing plugins in the form of .jar
@@ -52,8 +52,6 @@ public final class JavaPluginLoader implements PluginLoader {
     final Server server;
     private final Pattern[] fileFilters = new Pattern[]{Pattern.compile("\\.jar$")};
     private final List<PluginClassLoader> loaders = new CopyOnWriteArrayList<PluginClassLoader>();
-
-    private final LibraryLoader libraryLoader;
 
     /**
      * This class was not meant to be constructed explicitly
@@ -64,15 +62,6 @@ public final class JavaPluginLoader implements PluginLoader {
     public JavaPluginLoader(@NotNull Server instance) {
         Validate.notNull(instance, "Server cannot be null");
         server = instance;
-
-        LibraryLoader libraryLoader = null;
-        try {
-            libraryLoader = new LibraryLoader();
-        } catch (NoClassDefFoundError ex) {
-            // Provided depends were not added back
-            server.getLogger().warning("Could not initialize LibraryLoader (missing dependencies?)");
-        }
-        this.libraryLoader = libraryLoader;
     }
 
     @Override
@@ -141,7 +130,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
         final PluginClassLoader loader;
         try {
-            loader = new PluginClassLoader(this, getClass().getClassLoader(), description, dataFolder, file, (libraryLoader != null) ? libraryLoader.createLoader(description) : null);
+            loader = new PluginClassLoader(this, getClass().getClassLoader(), description, dataFolder, file, null);
         } catch (InvalidPluginException ex) {
             throw ex;
         } catch (Throwable ex) {
@@ -335,10 +324,6 @@ public final class JavaPluginLoader implements PluginLoader {
                 jPlugin.setEnabled(true);
             } catch (Throwable ex) {
                 server.getLogger().log(Level.SEVERE, "Error occurred while enabling " + plugin.getDescription().getFullName() + " (Is it up to date?)", ex);
-                // Mohist start - Disable plugins that fail to load
-                this.server.getPluginManager().disablePlugin(jPlugin);
-                return;
-                // Mohist end
             }
 
             // Perhaps abort here, rather than continue going, but as it stands,

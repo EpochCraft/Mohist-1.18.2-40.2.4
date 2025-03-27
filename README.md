@@ -5,9 +5,9 @@
 
 [![](https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fci.codemc.io%2Fjob%2FMohistMC%2Fjob%2FMohist-1.18.2)](https://ci.codemc.io/job/MohistMC/job/Mohist-1.18.2)
 [![](https://img.shields.io/github/stars/MohistMC/Mohist.svg?label=Stars&logo=github)](https://github.com/MohistMC/Mohist/stargazers)
-[![](https://img.shields.io/badge/Forge-1.18.2--40.2.21-brightgreen.svg?colorB=26303d&logo=Conda-Forge)](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.18.2.html)
-[![](https://img.shields.io/badge/jdk-17.0.10-brightgreen.svg?colorB=469C00&logo=java)](https://adoptium.net/?variant=openjdk17&jvmVariant=hotspot)
-[![](https://img.shields.io/badge/Gradle-8.2.1-brightgreen.svg?colorB=469C00&logo=gradle)](https://docs.gradle.org/8.2.1/release-notes.html)
+[![](https://img.shields.io/badge/Forge-1.18.2--40.2.4-brightgreen.svg?colorB=26303d&logo=Conda-Forge)](https://files.minecraftforge.net/net/minecraftforge/forge/index_1.18.2.html)
+[![](https://img.shields.io/badge/jdk-17.0.6-brightgreen.svg?colorB=469C00&logo=java)](https://adoptium.net/?variant=openjdk17&jvmVariant=hotspot)
+[![](https://img.shields.io/badge/Gradle-7.5.1-brightgreen.svg?colorB=469C00&logo=gradle)](https://docs.gradle.org/7.5.1/release-notes.html)
 [![](https://img.shields.io/bstats/servers/6762?label=bStats)](https://bstats.org/plugin/server-implementation/Mohist/6762)
 [![](https://badges.crowdin.net/mohist/localized.svg)](https://crowdin.com/project/mohist)
 [![](https://img.shields.io/discord/311256119005937665.svg?color=%237289da&label=Discord&logo=discord&logoColor=%237289da)](https://discord.gg/ZgXjHGd)
@@ -15,15 +15,21 @@
 [![](https://bstats.org/signatures/server-implementation/Mohist.svg)](https://bstats.org/plugin/server-implementation/Mohist/6762)
 </div>
 
-<img height="400px" alt="Mohist Project Status" src="https://mohistmc.com/api/v2/projects/mohist/table?" />
+| Version | Support     | Stability | Mod compatibility   | Plugin compatibility |
+|---------|-------------|-----------|---------------------|----------------------|
+| 1.19.3  | WIP         | Poor      | Zero                | Zero                 |
+| 1.18.2  | Active      | Good      | Better than plugins | Good                 |
+| 1.16.5  | Active      | Good      | Better than plugins | Good                 |
+| 1.12.2  | End Of Life | High      | Very good           | Very good            |
+| 1.7.10  | End Of Life | Poor      | Poor                | Poor                 |
 
 Progress
 ------
 
-- [x] Rectify Forge([**99cff4438**](https://github.com/MinecraftForge/MinecraftForge/commit/99cff4438))  
-- [x] Start patch
-  * [x] Bukkit([**6a039faf**](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/commits/6a039faf))
-  * [x] CraftBukkit([**10ba1beb6**](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/10ba1beb6))
+- [ ] Rectify Forge([**435de780a**](https://github.com/MinecraftForge/MinecraftForge/commit/435de780a))  
+- [ ] Start patch
+  * Bukkit([**6a039faf**](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/bukkit/commits/6a039faf))
+  * CraftBukkit([**10ba1beb6**](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/commits/10ba1beb6))
 
 Getting Help
 ------
@@ -32,10 +38,10 @@ Getting Help
 
 Upstream Projects
 ------
-* [**MinecraftForge**](https://github.com/MinecraftForge/MinecraftForge.git) - mod support.
 * [**Bukkit**](https://hub.spigotmc.org/stash/scm/spigot/bukkit.git) - plugin support.
 * [**CraftBukkit**](https://hub.spigotmc.org/stash/scm/spigot/craftbukkit.git) - plugin support.
 * [**Spigot**](https://hub.spigotmc.org/stash/scm/spigot/spigot.git) - plugin support.
+* [**MinecraftForge**](https://github.com/MinecraftForge/MinecraftForge.git) - mod support.
 * [**Arclight**](https://github.com/IzzelAliz/Arclight.git) - Remapper support.
 
 A Special Thanks To:

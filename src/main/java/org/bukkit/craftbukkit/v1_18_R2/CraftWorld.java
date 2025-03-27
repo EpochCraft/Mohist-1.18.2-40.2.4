@@ -553,7 +553,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                 int flag = ((CraftBlockState) blockstate).getFlag();
                 delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
                 net.minecraft.world.level.block.state.BlockState newBlock = world.getBlockState(position);
-                world.markAndNotifyBlock(position, null, oldBlock, newBlock, flag, 512);
+                world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flag, 512);
             }
             world.capturedBlockStates.clear();
             return true;
@@ -565,8 +565,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public String getName() {
-        world.M.checkName(world.name);
-        return world.name;
+        return world.serverLevelData.getLevelName();
     }
 
     @Override
@@ -1332,7 +1331,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean canGenerateStructures() {
-        return world.M.worldGenSettings().generateFeatures();
+        return world.serverLevelDataCB.worldGenSettings().generateFeatures();
     }
 
     @Override
@@ -1342,7 +1341,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setHardcore(boolean hardcore) {
-        world.M.settings.hardcore = hardcore;
+        world.serverLevelDataCB.settings.hardcore = hardcore;
     }
 
     @Override
@@ -1808,35 +1807,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public int getSimulationDistance() {
         return 0;
     }
-
-    // Mohist start
-    private boolean isbukkit = false;
-    @Override
-    public boolean isBukkit() {
-        return isbukkit;
-    }
-
-    @Override
-    public void setBukkit(boolean b) {
-        isbukkit = b;
-    }
-
-    @Override
-    public boolean isMods() {
-        String path = getWorldFolder().getAbsolutePath().replaceAll("\\\\", "/");
-        return !isBukkit() && path.contains("/world/dimensions/");
-    }
-
-    @Override
-    public String getModid() {
-        String path = getWorldFolder().getAbsolutePath().replaceAll("\\\\", "/");
-        String modName = "";
-        if(path.contains("/world/dimensions/")) {
-            modName = path.split("/world/dimensions/")[1].split("/")[0];
-        }
-        return modName;
-    }
-    // Mohist end
 
     // Spigot start
     private final Spigot spigot = new Spigot() {

@@ -1,21 +1,5 @@
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -18,6 +_,7 @@
- import java.util.Set;
- import java.util.UUID;
- import java.util.concurrent.atomic.AtomicInteger;
-+import java.util.concurrent.atomic.AtomicReference;
- import java.util.function.Predicate;
- import java.util.stream.Stream;
- import javax.annotation.Nullable;
-@@ -32,6 +_,7 @@
- import net.minecraft.commands.arguments.EntityAnchorArgument;
- import net.minecraft.core.BlockPos;
- import net.minecraft.core.Direction;
-+import net.minecraft.core.PositionImpl;
- import net.minecraft.core.SectionPos;
- import net.minecraft.core.particles.BlockParticleOption;
- import net.minecraft.core.particles.ParticleTypes;
 @@ -83,7 +_,6 @@
  import net.minecraft.world.level.Level;
  import net.minecraft.world.level.block.Block;
@@ -24,15 +8,7 @@
  import net.minecraft.world.level.block.HoneyBlock;
  import net.minecraft.world.level.block.Mirror;
  import net.minecraft.world.level.block.RenderShape;
-@@ -93,6 +_,7 @@
- import net.minecraft.world.level.block.state.properties.BlockStateProperties;
- import net.minecraft.world.level.border.WorldBorder;
- import net.minecraft.world.level.dimension.DimensionType;
-+import net.minecraft.world.level.dimension.LevelStem;
- import net.minecraft.world.level.entity.EntityAccess;
- import net.minecraft.world.level.entity.EntityInLevelCallback;
- import net.minecraft.world.level.gameevent.GameEvent;
-@@ -115,8 +_,28 @@
+@@ -115,8 +_,27 @@
  import net.minecraft.world.scores.PlayerTeam;
  import net.minecraft.world.scores.Team;
  import org.slf4j.Logger;
@@ -55,7 +31,6 @@
 +import org.bukkit.event.vehicle.VehicleEnterEvent;
 +import org.bukkit.event.vehicle.VehicleExitEvent;
 +import org.bukkit.plugin.PluginManager;
-+import org.spigotmc.AsyncCatcher;
  
 -public abstract class Entity implements Nameable, EntityAccess, CommandSource {
 +public abstract class Entity extends net.minecraftforge.common.capabilities.CapabilityProvider<Entity> implements Nameable, EntityAccess, CommandSource, net.minecraftforge.common.extensions.IForgeEntity {
@@ -85,7 +60,7 @@
     protected Object2DoubleMap<TagKey<Fluid>> f_19799_ = new Object2DoubleArrayMap<>(2);
     protected boolean f_19800_;
     private final Set<TagKey<Fluid>> f_19801_ = new HashSet<>();
-@@ -228,7 +_,68 @@
+@@ -228,7 +_,58 @@
     @Nullable
     private BlockState f_185934_ = null;
  
@@ -130,10 +105,6 @@
 +   }
 +   // CraftBukkit end
 +
-+   public void setBukkitEntity(CraftEntity bukkitEntity) {
-+      this.bukkitEntity = bukkitEntity;
-+   }
-+
 +   @Override
 +   public CommandSender getBukkitSender(CommandSourceStack wrapper) {
 +      return getBukkitEntity();
@@ -141,12 +112,6 @@
 +
 +   public boolean isChunkLoaded() {
 +      return f_19853_.m_7232_((int) Math.floor(this.m_20185_()) >> 4, (int) Math.floor(this.m_20189_()) >> 4);
-+   }
-+
-+   public AtomicReference<CreatureSpawnEvent.SpawnReason> spawnReason = new AtomicReference<>(CreatureSpawnEvent.SpawnReason.DEFAULT);
-+
-+   public void spawnReason(CreatureSpawnEvent.SpawnReason cs){
-+      spawnReason.set(cs);
 +   }
 +
     public Entity(EntityType<?> p_19870_, Level p_19871_) {
@@ -159,8 +124,8 @@
        this.f_185933_ = ChunkPos.f_186419_;
        this.f_19838_ = Vec3.f_82478_;
 +      // Spigot start
-+      if (p_19871_ != null && p_19871_ instanceof ServerLevel) {
-+         this.defaultActivationState = org.spigotmc.ActivationRange.initializeEntityActivationState(this, p_19871_.spigotConfig);
++      if (f_19853_ != null) {
++         this.defaultActivationState = org.spigotmc.ActivationRange.initializeEntityActivationState(this, f_19853_.spigotConfig);
 +      } else {
 +         this.defaultActivationState = false;
 +      }
@@ -189,7 +154,7 @@
  
     }
  
-@@ -350,6 +_,15 @@
+@@ -350,6 +_,13 @@
     }
  
     public void m_20124_(Pose p_20125_) {
@@ -198,9 +163,7 @@
 +      if (p_20125_ == this.m_20089_()) {
 +         return;
 +      }
-+      if (!AsyncCatcher.catchAsync()) {
-+         this.f_19853_.getCraftServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), org.bukkit.entity.Pose.values()[p_20125_.ordinal()]));
-+      }
++      this.f_19853_.getCraftServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), org.bukkit.entity.Pose.values()[p_20125_.ordinal()]));
 +      // CraftBukkit end
        this.f_19804_.m_135381_(f_19806_, p_20125_);
     }
@@ -352,17 +315,17 @@
 +               Vehicle vehicle = ( Vehicle ) this.getBukkitEntity();
 +               org.bukkit.block.Block bl = this.f_19853_.getWorld().getBlockAt(Mth.m_14107_(this.m_20185_()), Mth.m_14107_(this.m_20186_()), Mth.m_14107_(this.m_20189_()));
 +
-+               if (p_19974_.f_82479_ > vec3.f_82479_) {
++               if (vec3.f_82479_ > p_19974_.f_82479_) {
 +                  bl = bl.getRelative(BlockFace.EAST);
-+               } else if (p_19974_.f_82479_ < vec3.f_82479_) {
++               } else if (vec3.f_82479_ < p_19974_.f_82479_) {
 +                  bl = bl.getRelative(BlockFace.WEST);
-+               } else if (p_19974_.f_82481_ > vec3.f_82481_) {
++               } else if (vec3.f_82481_ > p_19974_.f_82481_) {
 +                  bl = bl.getRelative(BlockFace.SOUTH);
-+               } else if (p_19974_.f_82481_ < vec3.f_82481_) {
++               } else if (vec3.f_82481_ < p_19974_.f_82481_) {
 +                  bl = bl.getRelative( BlockFace.NORTH);
 +               }
 +
-+               if (bl.getType() != null && !bl.getType().isAir()) {
++               if (!bl.getType().isAir()) {
 +                  VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, bl);
 +                  f_19853_.getCraftServer().getPluginManager().callEvent(event);
 +               }
@@ -491,16 +454,15 @@
     public void m_5993_(Entity p_19953_, int p_19954_, DamageSource p_19955_) {
        if (p_19953_ instanceof ServerPlayer) {
           CriteriaTriggers.f_10569_.m_48104_((ServerPlayer)p_19953_, this, p_19955_);
-@@ -1405,6 +_,9 @@
-       if (this.f_146795_ != null && !this.f_146795_.m_146966_()) {
+@@ -1406,7 +_,7 @@
           return false;
        } else {
-+         if (!this.persist) { // CraftBukkit - persist flag
-+            return false;
-+         }
           String s = this.m_20078_();
-          if (s == null) {
+-         if (s == null) {
++         if (!this.persist || s == null) { // CraftBukkit - persist flag
              return false;
+          } else {
+             p_20087_.m_128359_("id", s);
 @@ -1430,6 +_,19 @@
  
           Vec3 vec3 = this.m_20184_();
@@ -633,8 +595,16 @@
        } catch (Throwable throwable) {
           CrashReport crashreport = CrashReport.m_127521_(throwable, "Loading entity NBT");
           CrashReportCategory crashreportcategory = crashreport.m_127514_("Entity being loaded");
-@@ -1640,6 +_,17 @@
+@@ -1638,8 +_,25 @@
+       } else if (this.f_19853_.f_46443_) {
+          return null;
        } else {
++         // CraftBukkit start - Capture drops for death event
++         if (this instanceof LivingEntity && !((LivingEntity) this).forceDrops) {
++            ((LivingEntity) this).drops.add(org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack.asBukkitCopy(p_19985_));
++            return null;
++         }
++         // CraftBukkit end
           ItemEntity itementity = new ItemEntity(this.f_19853_, this.m_20185_(), this.m_20186_() + (double)p_19986_, this.m_20189_(), p_19985_);
           itementity.m_32060_();
 +
@@ -861,50 +831,24 @@
     }
  
     public boolean m_7306_(Entity p_20356_) {
-@@ -2237,14 +_,44 @@
+@@ -2237,14 +_,20 @@
  
     @Nullable
     public Entity m_5489_(ServerLevel p_20118_) {
 +      return this.changeDimension(p_20118_, p_20118_.m_8871_());
 +   }
-+
-+   private AtomicReference<BlockPos> mohist$postion = new AtomicReference<>();
-+
-+   @Nullable
-+   public Entity teleportTo(ServerLevel pDestination, BlockPos location) {
-+      mohist$postion.set(location);
-+      return this.m_5489_(pDestination);
-+   }
-+
 +   @Nullable
 +   public Entity changeDimension(ServerLevel p_20118_, net.minecraftforge.common.util.ITeleporter teleporter) {
 +      if (!net.minecraftforge.common.ForgeHooks.onTravelToDimension(this, p_20118_.m_46472_())) return null;
        if (this.f_19853_ instanceof ServerLevel && !this.m_146910_()) {
--         this.f_19853_.m_46473_().m_6180_("changeDimension");
--         this.m_19877_();
-+         // this.unRide();
-+         // CraftBukkit start
-+         if (p_20118_ == null) {
-+            return null;
-+         }
-+         // CraftBukkit end
+          this.f_19853_.m_46473_().m_6180_("changeDimension");
+          this.m_19877_();
           this.f_19853_.m_46473_().m_6180_("reposition");
 -         PortalInfo portalinfo = this.m_7937_(p_20118_);
-+         BlockPos location = mohist$postion.get();
-+         PortalInfo portalinfo = (location == null) ? teleporter.getPortalInfo(this, p_20118_, this::m_7937_) : new PortalInfo(new Vec3(location.m_123341_(), location.m_123342_(), location.m_123343_()), Vec3.f_82478_, this.f_19857_, this.f_19858_);
-+
++         PortalInfo portalinfo = teleporter.getPortalInfo(this, p_20118_, this::m_7937_);
           if (portalinfo == null) {
              return null;
           } else {
-+            portalinfo.setWorld(p_20118_);
-+            // CraftBukkit start
-+            if (portalinfo.world == f_19853_) {
-+               // SPIGOT-6782: Just move the entity if a plugin changed the world to the one the entity is already in
-+               m_7678_(portalinfo.f_77676_.f_82479_, portalinfo.f_77676_.f_82480_, portalinfo.f_77676_.f_82481_, portalinfo.f_77678_, portalinfo.f_77679_);
-+               m_20256_(portalinfo.f_77677_);
-+               return this;
-+            }
-+            this.m_19877_();
 +            Entity transportedEntity = teleporter.placeEntity(this, (ServerLevel) this.f_19853_, p_20118_, this.f_19857_, spawnPortal -> { //Forge: Start vanilla logic
              this.f_19853_.m_46473_().m_6182_("reloading");
              Entity entity = this.m_6095_().m_20615_(p_20118_);
@@ -914,7 +858,7 @@
                 entity.m_20256_(portalinfo.f_77677_);
                 p_20118_.m_143334_(entity);
 -               if (p_20118_.m_46472_() == Level.f_46430_) {
-+               if (spawnPortal && p_20118_.getTypeKey() == LevelStem.f_63973_) {
++               if (spawnPortal && p_20118_.m_46472_() == Level.f_46430_) {
                    ServerLevel.m_8617_(p_20118_);
                 }
 +
@@ -1087,11 +1031,10 @@
        this.f_146795_ = null;
     }
  
-@@ -3061,6 +_,76 @@
-    public boolean m_142265_(Level p_146843_, BlockPos p_146844_) {
+@@ -3062,8 +_,81 @@
        return true;
     }
-+
+ 
 +   /* ================================== Forge Start =====================================*/
 +
 +   private boolean canUpdate = true;
@@ -1161,6 +1104,12 @@
 +
 +   /* ================================== Forge End =====================================*/
 +
- 
++
     public Level m_183503_() {
        return this.f_19853_;
++   }
++
++   public void teleportTo(ServerLevel handle, BlockPos blockPos) {
+    }
+ 
+    @FunctionalInterface

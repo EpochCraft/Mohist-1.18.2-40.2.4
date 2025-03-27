@@ -5,15 +5,12 @@
 
 package net.minecraftforge.items.wrapper;
 
-import com.mohistmc.api.event.InvWrapperMoveItemEvent;
-import com.mohistmc.bukkit.inventory.InventoryOwner;
-import javax.annotation.Nonnull;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemHandlerHelper;
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
+
+import javax.annotation.Nonnull;
 
 public class InvWrapper implements IItemHandlerModifiable
 {
@@ -65,12 +62,6 @@ public class InvWrapper implements IItemHandlerModifiable
             return ItemStack.EMPTY;
 
         ItemStack stackInSlot = getInv().getItem(slot);
-        var oitemstack = CraftItemStack.asCraftMirror(stackInSlot);
-        var event = new InvWrapperMoveItemEvent.Insert(InventoryOwner.getInventory(getInv()), oitemstack);
-        Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
-            return stack;
-        }
 
         int m;
         if (!stackInSlot.isEmpty())
@@ -164,12 +155,6 @@ public class InvWrapper implements IItemHandlerModifiable
         if (stackInSlot.isEmpty())
             return ItemStack.EMPTY;
 
-        var oitemstack = CraftItemStack.asCraftMirror(stackInSlot);
-        var event = new InvWrapperMoveItemEvent.Extract(InventoryOwner.getInventory(getInv()), oitemstack);
-        Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
-            return ItemStack.EMPTY;
-        }
         if (simulate)
         {
             if (stackInSlot.getCount() < amount)

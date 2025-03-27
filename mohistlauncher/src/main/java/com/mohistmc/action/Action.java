@@ -19,10 +19,11 @@
 package com.mohistmc.action;
 
 import com.mohistmc.MohistMCStart;
-import com.mohistmc.tools.FileUtils;
-import com.mohistmc.tools.MD5Util;
 import com.mohistmc.util.DataParser;
 import com.mohistmc.util.JarLoader;
+import com.mohistmc.util.JarTool;
+import com.mohistmc.util.MD5Util;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -44,7 +45,7 @@ public abstract class Action {
     public String forgeVer;
     public String mcpVer;
     public String mcVer;
-    public String libPath;
+    public String libPath = new File(JarTool.getJarDir(), "libraries").getAbsolutePath() + "/";
 
     public String forgeStart;
     public File universalJar;
@@ -69,8 +70,6 @@ public abstract class Action {
         this.forgeVer = DataParser.versionMap.get("forge");
         this.mcpVer = DataParser.versionMap.get("mcp");
         this.mcVer = DataParser.versionMap.get("minecraft");
-        this.libPath = new File(MohistMCStart.jarTool.getJarDir(), "libraries").getAbsolutePath() + "/";
-
 
         this.forgeStart = libPath + "net/minecraftforge/forge/" + mcVer + "-" + forgeVer + "/forge-" + mcVer + "-" + forgeVer;
         this.universalJar = new File(forgeStart + "-universal.jar");
@@ -133,17 +132,7 @@ public abstract class Action {
 
     protected void copyFileFromJar(File file, String pathInJar) {
         InputStream is = MohistMCStart.class.getClassLoader().getResourceAsStream(pathInJar);
-        if (!file.exists() || !MD5Util.get(file).equals(MD5Util.get(is)) || file.length() <= 1) {
-            // Clear old version
-            File parentfile = file.getParentFile();
-            if (file.getAbsolutePath().contains("minecraftforge")) {
-                int lastSlashIndex = parentfile.getAbsolutePath().replaceAll("\\\\", "/").lastIndexOf("/");
-                String result = parentfile.getAbsolutePath().substring(0, lastSlashIndex + 1);
-                File old = new File(result);
-                if (old.exists()) {
-                    FileUtils.deleteFolders(old);
-                }
-            }
+        if (!file.exists() || !MD5Util.getMd5(file).equals(MD5Util.getMd5(is)) || file.length() <= 1) {
             file.getParentFile().mkdirs();
             if (is != null) {
                 try {
@@ -166,28 +155,6 @@ public abstract class Action {
         } catch (IOException e) {
             return true;
         }
-    }
-
-    public boolean checkDependencies() throws IOException {
-        if (installInfo.exists()) {
-            String jarmd = MD5Util.get(MohistMCStart.jarTool.getFile());
-            List<String> lines = Files.readAllLines(installInfo.toPath());
-            return lines.size() < 2 || !jarmd.equals(lines.get(1));
-        }
-        return true;
-    }
-
-    protected static void deleteFolder(File folder) {
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for(File f : files) {
-                if (f.isDirectory())
-                    deleteFolder(f);
-                else
-                    f.delete();
-            }
-        }
-        folder.delete();
     }
 
 }

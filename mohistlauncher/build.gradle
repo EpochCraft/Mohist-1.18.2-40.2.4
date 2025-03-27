@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 repositories {
@@ -11,32 +11,22 @@ repositories {
 
 dependencies {
     implementation "cpw.mods:securejarhandler:1.0.3"
+    implementation 'com.google.code.gson:gson:2.8.9'
 
     implementation 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
     compileOnly 'org.projectlombok:lombok:1.18.24'
 
-    implementation 'com.mohistmc:yaml:0.5'
-    implementation 'org.yaml:snakeyaml:2.0'
-    implementation 'com.mohistmc:i18n:0.6'
-    implementation 'com.mohistmc:json:0.2'
-    implementation 'com.mohistmc:tools:0.5.1'
-
-    implementation 'me.tongfei:progressbar:0.10.0'
-    implementation 'org.jline:jline:3.23.0'
+    implementation 'com.mohistmc.yaml:yaml:0.3'
+    implementation 'org.yaml:snakeyaml:1.33'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
 }
 
 shadowJar {
     dependencies {
-        include(dependency('com.mohistmc:yaml:0.5'))
-        include(dependency('org.yaml:snakeyaml:2.0'))
-        include(dependency('com.mohistmc:i18n'))
-        include(dependency('com.mohistmc:tools'))
-        include(dependency('com.mohistmc:json'))
-        include(dependency('me.tongfei:progressbar'))
-        include(dependency('org.jline:jline'))
+        include(dependency('com.mohistmc.yaml:yaml:0.3'))
+        include(dependency('org.yaml:snakeyaml:1.33'))
     }
-    relocate("org.yaml.snakeyaml", "com.mohistmc.yaml")
 }
 
 jar.dependsOn(shadowJar)

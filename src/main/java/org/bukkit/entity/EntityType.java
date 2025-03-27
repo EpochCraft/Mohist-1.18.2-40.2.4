@@ -4,13 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.mohistmc.bukkit.entity.MohistModsAbstractHorse;
-import com.mohistmc.bukkit.entity.MohistModsAnimals;
-import com.mohistmc.bukkit.entity.MohistModsChestHorse;
-import com.mohistmc.bukkit.entity.MohistModsMinecartContainer;
-import com.mohistmc.bukkit.entity.MohistModsMonster;
-import com.mohistmc.bukkit.entity.MohistModsProjectileEntity;
-import com.mohistmc.bukkit.entity.MohistModsTameableEntity;
+import com.mohistmc.entity.*;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -306,7 +300,7 @@ public enum EntityType implements Keyed {
     private final Class<? extends Entity> clazz;
     private final short typeId;
     private final boolean independent, living;
-    public NamespacedKey key;
+    private final NamespacedKey key;
 
     public static final Map<String, EntityType> NAME_MAP = new HashMap<String, EntityType>();
     public static final Map<Short, EntityType> ID_MAP = new HashMap<Short, EntityType>();
@@ -359,7 +353,7 @@ public enum EntityType implements Keyed {
     @Deprecated
     @Nullable
     public String getName() {
-        return name == null ? name() : name; // Mohist
+        return name;
     }
 
     @NotNull

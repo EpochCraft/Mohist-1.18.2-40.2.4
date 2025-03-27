@@ -18,14 +18,15 @@
 
 package com.mohistmc.libraries;
 
-import com.mohistmc.MohistMCStart;
 import com.mohistmc.action.v_1_18_2;
 import com.mohistmc.config.MohistConfigUtil;
 import com.mohistmc.network.download.DownloadSource;
 import com.mohistmc.network.download.UpdateUtils;
-import com.mohistmc.tools.MD5Util;
-import com.mohistmc.util.I18n;
 import com.mohistmc.util.JarLoader;
+import com.mohistmc.util.JarTool;
+import com.mohistmc.util.MD5Util;
+import com.mohistmc.util.i18n.i18n;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -35,13 +36,9 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import me.tongfei.progressbar.ProgressBar;
-import me.tongfei.progressbar.ProgressBarBuilder;
-import me.tongfei.progressbar.ProgressBarStyle;
 
 public class DefaultLibraries {
     public static HashMap<String, String> fail = new HashMap<>();
-    public static final AtomicLong allSize = new AtomicLong(); // global
     public static String MAVENURL = DownloadSource.get().getUrl();
 
     public static String libUrl(File lib) {
@@ -49,67 +46,56 @@ public class DefaultLibraries {
     }
 
     public static void run() throws Exception {
-        System.out.println(I18n.as("libraries.checking.start"));
+        System.out.println(i18n.get("libraries.checking.start"));
         LinkedHashMap<File, String> libs = getDefaultLibs();
         AtomicLong currentSize = new AtomicLong();
         Set<File> defaultLibs = new LinkedHashSet<>();
-        for (File lib : libs.keySet()) {
+        AtomicLong allSize = new AtomicLong(); // global
+        for (File lib : getDefaultLibs().keySet()) {
+            allSize.addAndGet(UpdateUtils.getAllSizeOfUrl(libUrl(lib)));
             v_1_18_2.loadedLibsPaths.add(lib.getAbsolutePath());
             if (lib.exists() && MohistConfigUtil.yml.getStringList("libraries_black_list").contains(lib.getName())) {
                 continue;
             }
-            if (lib.exists() && Objects.equals(MD5Util.get(lib), libs.get(lib))) {
+            if (lib.exists() && MD5Util.getMd5(lib).equals(libs.get(lib))) {
                 currentSize.addAndGet(lib.length());
                 continue;
             }
             defaultLibs.add(lib);
         }
+        for (File lib : defaultLibs) {
+            lib.getParentFile().mkdirs();
 
-        if (!defaultLibs.isEmpty()) {
-            System.out.println(I18n.as("libraries.downloadsource", DownloadSource.get().name()));
-            System.out.println(I18n.as("libraries.global.percentage"));
-            ProgressBarBuilder builder = new ProgressBarBuilder().setTaskName("")
-                    .setStyle(ProgressBarStyle.ASCII)
-                    .setUpdateIntervalMillis(100)
-                    .setInitialMax(defaultLibs.size());
-            try (ProgressBar pb = builder.build()) {
-                for (File lib : defaultLibs) {
-                    lib.getParentFile().mkdirs();
-
-                    String u = libUrl(lib);
-                    String failKey = u.replace(MAVENURL, "");
-                    try {
-                        UpdateUtils.downloadFile(u, lib, libs.get(lib), false);
-                        JarLoader.loadJar(lib.toPath());
-                        currentSize.addAndGet(lib.length());
-                        fail.remove(failKey);
-                    } catch (Exception e) {
-                        if (e.getMessage() != null && !"md5".equals(e.getMessage())) {
-                            System.out.println(I18n.as("file.download.nook", u));
-                            lib.delete();
-                        }
-                        fail.put(failKey, lib.getAbsolutePath());
-                    }
-                    pb.step();
+            String u = libUrl(lib);
+            System.out.println(i18n.get("libraries.global.percentage") + Math.round((float) (currentSize.get() * 100) / allSize.get()) + "%"); //Global percentage
+            try {
+                UpdateUtils.downloadFile(u, lib, libs.get(lib));
+                JarLoader.loadJar(lib.toPath());
+                currentSize.addAndGet(lib.length());
+                fail.remove(u.replace(MAVENURL, ""));
+            } catch (Exception e) {
+                if (e.getMessage() != null && !"md5".equals(e.getMessage())) {
+                    System.out.println(i18n.get("file.download.nook", u));
+                    lib.delete();
                 }
+                fail.put(u.replace(MAVENURL, ""), lib.getAbsolutePath());
             }
         }
         /*FINISHED | RECHECK IF A FILE FAILED*/
         if (!fail.isEmpty()) {
             run();
         } else {
-            System.out.println(I18n.as("libraries.check.end"));
+            System.out.println(i18n.get("libraries.check.end"));
         }
     }
 
     public static LinkedHashMap<File, String> getDefaultLibs() throws Exception {
         LinkedHashMap<File, String> temp = new LinkedHashMap<>();
-        BufferedReader b = new BufferedReader(new InputStreamReader(DefaultLibraries.class.getClassLoader().getResourceAsStream("libraries.txt")));
+        BufferedReader b = new BufferedReader(new InputStreamReader(Objects.requireNonNull(DefaultLibraries.class.getClassLoader().getResourceAsStream("libraries.txt"))));
         String str;
         while ((str = b.readLine()) != null) {
             String[] s = str.split("\\|");
-            temp.put(new File(MohistMCStart.jarTool.getJarDir() + "/" + s[0]), s[1]);
-            allSize.addAndGet(Long.parseLong(s[2]));
+            temp.put(new File(JarTool.getJarDir() + "/" + s[0]), s[1]);
         }
         b.close();
         return temp;

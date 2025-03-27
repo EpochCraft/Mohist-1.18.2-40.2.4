@@ -2,8 +2,6 @@ package org.bukkit.craftbukkit.v1_18_R2.inventory;
 
 import java.util.Iterator;
 import java.util.Map;
-
-import com.mohistmc.bukkit.inventory.MohistSpecialRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -38,13 +36,7 @@ public class RecipeIterator implements Iterator<Recipe> {
             return next();
         }
 
-        net.minecraft.world.item.crafting.Recipe<?> recipe = current.next();
-        try {
-            return recipe.toBukkitRecipe();
-        } catch (Throwable e) {
-            //throw new RuntimeException("Error converting recipe " + recipe.getId(), e);
-            return new MohistSpecialRecipe(recipe);
-        }
+        return current.next().toBukkitRecipe();
     }
 
     @Override

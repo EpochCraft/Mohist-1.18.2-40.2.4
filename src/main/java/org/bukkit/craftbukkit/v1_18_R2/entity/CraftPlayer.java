@@ -15,7 +15,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
-import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.Util;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
@@ -85,7 +84,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerHideEntityEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerShowEntityEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnregisterChannelEvent;
@@ -776,7 +774,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (fromWorld == toWorld) {
             entity.connection.teleport(to);
         } else {
-            entity.teleportTo(toWorld, to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
+            server.getHandle().respawn(entity, toWorld, true, to, true);
         }
         return true;
     }
@@ -1306,6 +1304,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 handle.newExp = data.getInt("newExp");
                 handle.newTotalExp = data.getInt("newTotalExp");
                 handle.newLevel = data.getInt("newLevel");
+                handle.expToDrop = data.getInt("expToDrop");
                 handle.keepLevel = data.getBoolean("keepLevel");
             }
         }
@@ -1321,6 +1320,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         data.putInt("newExp", handle.newExp);
         data.putInt("newTotalExp", handle.newTotalExp);
         data.putInt("newLevel", handle.newLevel);
+        data.putInt("expToDrop", handle.expToDrop);
         data.putBoolean("keepLevel", handle.keepLevel);
         data.putLong("firstPlayed", getFirstPlayed());
         data.putLong("lastPlayed", System.currentTimeMillis());
@@ -1405,7 +1405,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void addChannel(String channel) {
-        Preconditions.checkState(channels.size() < 1024, "Cannot register channel '%s'. Too many channels registered!", channel);
+        Preconditions.checkState(channels.size() < 128, "Cannot register channel '%s'. Too many channels registered!", channel);
         channel = StandardMessenger.validateAndCorrectChannel(channel);
         if (channels.add(channel)) {
             server.getPluginManager().callEvent(new PlayerRegisterChannelEvent(this, channel));
@@ -1719,11 +1719,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         getHandle().connection.send(packetReset);
     }
 
-    public void restore(CraftPlayer player) {
-        setDisplayName(player.getDisplayName());
-        player.setHandle(getHandle());
-    }
-
     @Override
     public void spawnParticle(Particle particle, Location location, int count) {
         spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count);
@@ -1853,98 +1848,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     // Spigot start
     private final Player.Spigot spigot = new Player.Spigot()
     {
-        @Override
-        public InetSocketAddress getRawAddress()
-        {
-            return (InetSocketAddress) getHandle().connection.connection.getRawAddress();
-        }
-
-        @Override
-        public boolean getCollidesWithEntities() {
-            return CraftPlayer.this.isCollidable();
-        }
-
-        @Override
-        public void setCollidesWithEntities(boolean collides) {
-            CraftPlayer.this.setCollidable(collides);
-        }
-
-        @Override
-        public void respawn()
-        {
-            if ( getHealth() <= 0 && isOnline() )
-            {
-                server.getServer().getPlayerList().respawn( getHandle(), false );
-            }
-        }
-
-        @Override
-        public Set<Player> getHiddenPlayers()
-        {
-            Set<Player> ret = new HashSet<Player>();
-            for ( UUID u : hiddenEntities.keySet() )
-            {
-                Player p = getServer().getPlayer( u );
-                if ( p != null )
-                {
-                    ret.add( p );
-                }
-            }
-
-            return java.util.Collections.unmodifiableSet( ret );
-        }
-
-        @Override
-        public void sendMessage(BaseComponent component) {
-            sendMessage( new BaseComponent[] { component } );
-        }
-
-        @Override
-        public void sendMessage(BaseComponent... components) {
-            if ( getHandle().connection == null ) return;
-
-            ClientboundChatPacket packet = new ClientboundChatPacket(null, net.minecraft.network.chat.ChatType.SYSTEM, Util.NIL_UUID);
-            packet.components = components;
-            getHandle().connection.send(packet);
-        }
-
-        @Override
-        public void sendMessage(UUID sender, BaseComponent component) {
-            this.sendMessage(net.md_5.bungee.api.ChatMessageType.CHAT, sender, component);
-        }
-
-        @Override
-        public void sendMessage(UUID sender, BaseComponent... components) {
-            this.sendMessage(net.md_5.bungee.api.ChatMessageType.CHAT, sender, components);
-        }
-
-        @Override
-        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, BaseComponent component) {
-            sendMessage( position, new BaseComponent[] { component } );
-        }
-
-        @Override
-        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, BaseComponent... components) {
-            if ( getHandle().connection == null ) return;
-
-            ClientboundChatPacket packet = new ClientboundChatPacket(null, net.minecraft.network.chat.ChatType.getForIndex((byte) position.ordinal()), Util.NIL_UUID);
-            packet.components = components;
-            getHandle().connection.send(packet);
-        }
-
-        @Override
-        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, UUID sender, BaseComponent component) {
-            sendMessage( position, sender, new BaseComponent[] { component } );
-        }
-
-        @Override
-        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, UUID sender, BaseComponent... components) {
-            if ( getHandle().connection == null ) return;
-
-            ClientboundChatPacket packet = new ClientboundChatPacket(null, net.minecraft.network.chat.ChatType.getForIndex((byte) position.ordinal()), sender == null ? Util.NIL_UUID : sender);
-            packet.components = components;
-            getHandle().connection.send(packet);
-        }
     };
 
     public Player.Spigot spigot()

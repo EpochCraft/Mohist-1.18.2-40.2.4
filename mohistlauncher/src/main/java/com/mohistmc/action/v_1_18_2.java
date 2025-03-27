@@ -20,9 +20,11 @@ package com.mohistmc.action;
 
 import com.mohistmc.MohistMCStart;
 import com.mohistmc.config.MohistConfigUtil;
-import com.mohistmc.tools.MD5Util;
-import com.mohistmc.util.I18n;
+import com.mohistmc.util.JarTool;
+import com.mohistmc.util.MD5Util;
 import com.mohistmc.util.MohistModuleManager;
+import com.mohistmc.util.i18n.i18n;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
@@ -39,7 +41,7 @@ public class v_1_18_2 {
             System.out.println("[WARNING] We detected that you're using the -Xms argument and it will add the specified ram to the current Java process and the Java process which will be created by the ProcessBuilder, and this could lead to double RAM consumption.\nIf the server does not restart, please try remove the -Xms jvm argument.");
         }
         ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.directory(MohistMCStart.jarTool.getJarDir());
+        pb.directory(JarTool.getJarDir());
         pb.inheritIO().start().waitFor();
         Thread.sleep(2000);
         if (shutdown) {
@@ -77,23 +79,21 @@ public class v_1_18_2 {
             this.mojmap = new File(otherStart + "-mappings.txt");
             this.mc_unpacked = new File(otherStart + "-unpacked.jar");
             this.mergedMapping = new File(mcpStart + "-mappings-merged.txt");
+
             install();
         }
 
         private void install() throws Exception {
+            System.out.println(i18n.get("installation.start"));
             launchArgs.add(new File(MohistModuleManager.class.getProtectionDomain().getCodeSource().getLocation().getPath().substring(1)).getName());
             launchArgs.addAll(MohistMCStart.mainArgs);
             copyFileFromJar(lzma, "data/server.lzma");
+            copyFileFromJar(universalJar, "data/forge-" + mcVer + "-" + forgeVer + "-universal.jar");
             copyFileFromJar(fmlloader, "data/fmlloader-" + mcVer + "-" + forgeVer + ".jar");
             copyFileFromJar(fmlcore, "data/fmlcore-" + mcVer + "-" + forgeVer + ".jar");
             copyFileFromJar(javafmllanguage, "data/javafmllanguage-" + mcVer + "-" + forgeVer + ".jar");
             copyFileFromJar(mclanguage, "data/mclanguage-" + mcVer + "-" + forgeVer + ".jar");
             copyFileFromJar(lowcodelanguage, "data/lowcodelanguage-" + mcVer + "-" + forgeVer + ".jar");
-
-            if (!checkDependencies()) return;
-            System.out.println(I18n.as("installation.start"));
-
-            copyFileFromJar(universalJar, "data/forge-" + mcVer + "-" + forgeVer + "-universal.jar");
 
             if (mohistVer == null || mcpVer == null) {
                 System.out.println("[Mohist] There is an error with the installation, the forge / mcp version is not set.");
@@ -114,7 +114,7 @@ public class v_1_18_2 {
                     unmute();
                 }
             } else {
-                System.out.println(I18n.as("installation.minecraftserver"));
+                System.out.println(i18n.get("installation.minecraftserver"));
             }
 
             if (mcpZip.exists()) {
@@ -122,7 +122,7 @@ public class v_1_18_2 {
 
                     // MAKE THE MAPPINGS TXT FILE
 
-                    System.out.println(I18n.as("installation.mcp"));
+                    System.out.println(i18n.get("installation.mcp"));
                     mute();
                     run("net.minecraftforge.installertools.ConsoleTool",
                             new String[]{"--task", "MCP_DATA", "--input", mcpZip.getAbsolutePath(), "--output", mcpTxt.getAbsolutePath(), "--key", "mappings"},
@@ -130,7 +130,7 @@ public class v_1_18_2 {
                     unmute();
                 }
             } else {
-                System.out.println(I18n.as("installation.mcpfilemissing"));
+                System.out.println(i18n.get("installation.mcpfilemissing"));
                 System.exit(0);
             }
 
@@ -173,8 +173,8 @@ public class v_1_18_2 {
 
             String storedServerMD5 = null;
             String storedMohistMD5 = null;
-            String serverMD5 = MD5Util.get(serverJar);
-            String mohistMD5 = MD5Util.get(MohistMCStart.jarTool.getFile());
+            String serverMD5 = MD5Util.getMd5(serverJar);
+            String mohistMD5 = MD5Util.getMd5(JarTool.getFile());
 
             if (installInfo.exists()) {
                 List<String> infoLines = Files.readAllLines(installInfo.toPath());
@@ -195,7 +195,7 @@ public class v_1_18_2 {
                 run("net.minecraftforge.binarypatcher.ConsoleTool",
                         new String[]{"--clean", srg.getAbsolutePath(), "--output", serverJar.getAbsolutePath(), "--apply", lzma.getAbsolutePath()},
                         stringToUrl(new ArrayList<>(Arrays.asList(
-                                libPath + "net/minecraftforge/binarypatcher/1.1.1/binarypatcher-1.1.1.jar",
+                                libPath + "net/minecraftforge/binarypatcher/1.0.12/binarypatcher-1.0.12.jar",
                                 libPath + "commons-io/commons-io/2.11.0/commons-io-2.11.0.jar",
                                 libPath + "com/google/guava/guava/31.0.1-jre/guava-31.0.1-jre.jar",
                                 libPath + "net/sf/jopt-simple/jopt-simple/5.0.4/jopt-simple-5.0.4.jar",
@@ -209,7 +209,7 @@ public class v_1_18_2 {
                                 libPath + "trove/trove/1.0.2/trove-1.0.2.jar"
                         ))));
                 unmute();
-                serverMD5 = MD5Util.get(serverJar);
+                serverMD5 = MD5Util.getMd5(serverJar);
             }
 
             FileWriter fw = new FileWriter(installInfo);
@@ -217,7 +217,7 @@ public class v_1_18_2 {
             fw.write(mohistMD5);
             fw.close();
 
-            System.out.println(I18n.as("installation.finished"));
+            System.out.println(i18n.get("installation.finished"));
             MohistConfigUtil.yml.set("mohist.installation-finished", true);
             MohistConfigUtil.save();
             restartServer(launchArgs, true);

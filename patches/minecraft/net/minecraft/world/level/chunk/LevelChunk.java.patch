@@ -1,15 +1,14 @@
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -5,13 +_,16 @@
+@@ -5,6 +_,7 @@
  import com.mojang.logging.LogUtils;
  import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
  import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 +
  import java.util.Map;
  import java.util.Map.Entry;
-+import java.util.concurrent.atomic.AtomicBoolean;
  import java.util.function.Consumer;
- import java.util.function.Supplier;
+@@ -12,6 +_,7 @@
  import java.util.stream.Stream;
  import java.util.stream.StreamSupport;
  import javax.annotation.Nullable;
@@ -26,47 +25,46 @@
     static final Logger f_62771_ = LogUtils.getLogger();
     private static final TickingBlockEntity f_156361_ = new TickingBlockEntity() {
        public void m_142224_() {
-@@ -79,6 +_,21 @@
+@@ -70,7 +_,7 @@
+    private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> f_156362_ = Maps.newHashMap();
+    private boolean f_62775_;
+    private boolean f_196848_ = false;
+-   public final Level f_62776_;
++    public final Level f_62776_; // CraftBukkit - type
+    @Nullable
+    private Supplier<ChunkHolder.FullChunkStatus> f_62790_;
+    @Nullable
+@@ -79,6 +_,20 @@
     private final LevelChunkTicks<Block> f_62784_;
     private final LevelChunkTicks<Fluid> f_187943_;
  
-+   public org.bukkit.Chunk bukkitChunk;
++    public org.bukkit.Chunk bukkitChunk;
 +
-+   public org.bukkit.Chunk getBukkitChunk ( )
++    public org.bukkit.Chunk getBukkitChunk ( )
 +    {
 +        return bukkitChunk;
 +    }
-+   public boolean mustNotSave;
-+   public boolean needsDecoration;
-+   private static final org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataTypeRegistry();
-+   public org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataContainer persistentDataContainer =
-+            new org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataContainer( DATA_TYPE_REGISTRY );
-+   // CraftBukkit end
 +
-+   public ServerLevel q; // Mohist
++    public boolean mustNotSave;
++    public boolean needsDecoration;
++    private static final org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataTypeRegistry();
++    public org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataContainer persistentDataContainer =
++            new org.bukkit.craftbukkit.v1_18_R2.persistence.CraftPersistentDataContainer( DATA_TYPE_REGISTRY );
++    // CraftBukkit end
 +
     public LevelChunk(Level p_187945_, ChunkPos p_187946_) {
        this(p_187945_, p_187946_, UpgradeData.f_63320_, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, (LevelChunkSection[])null, (LevelChunk.PostLoadProcessor)null, (BlendingData)null);
     }
-@@ -86,6 +_,9 @@
-    public LevelChunk(Level p_196854_, ChunkPos p_196855_, UpgradeData p_196856_, LevelChunkTicks<Block> p_196857_, LevelChunkTicks<Fluid> p_196858_, long p_196859_, @Nullable LevelChunkSection[] p_196860_, @Nullable LevelChunk.PostLoadProcessor p_196861_, @Nullable BlendingData p_196862_) {
-       super(p_196855_, p_196856_, p_196854_, p_196854_.m_5962_().m_175515_(Registry.f_122885_), p_196859_, p_196860_, p_196862_);
-       this.f_62776_ = p_196854_;
-+      if (p_196854_ != null && p_196854_.getClass() == ServerLevel.class) {
-+         this.q = ((ServerLevel) p_196854_);
-+      }
-       this.f_156363_ = new Int2ObjectOpenHashMap<>();
- 
-       for(Heightmap.Types heightmap$types : Heightmap.Types.values()) {
 @@ -97,7 +_,11 @@
        this.f_62791_ = p_196861_;
        this.f_62784_ = p_196857_;
        this.f_187943_ = p_196858_;
+-   }
 +      this.capProvider.initInternal();
-+      // CraftBukkit start
-+      if (p_196855_ != null) this.bukkitChunk = new org.bukkit.craftbukkit.v1_18_R2.CraftChunk( this );
-    }
-+   // CraftBukkit end
++        // CraftBukkit start
++        this.bukkitChunk = new org.bukkit.craftbukkit.v1_18_R2.CraftChunk( this );
++    }
++    // CraftBukkit end
  
     public LevelChunk(ServerLevel p_196850_, ProtoChunk p_196851_, @Nullable LevelChunk.PostLoadProcessor p_196852_) {
        this(p_196850_, p_196851_.m_7697_(), p_196851_.m_7387_(), p_196851_.m_188181_(), p_196851_.m_188182_(), p_196851_.m_6319_(), p_196851_.m_7103_(), p_196852_, p_196851_.m_183407_());
@@ -86,144 +84,45 @@
     }
  
     public TickContainerAccess<Block> m_183531_() {
-@@ -205,63 +_,80 @@
+@@ -205,8 +_,17 @@
        }
     }
  
 -   @Nullable
 -   public BlockState m_6978_(BlockPos p_62865_, BlockState p_62866_, boolean p_62867_) {
--      int i = p_62865_.m_123342_();
--      LevelChunkSection levelchunksection = this.m_183278_(this.m_151564_(i));
--      boolean flag = levelchunksection.m_188008_();
--      if (flag && p_62866_.m_60795_()) {
--         return null;
--      } else {
--         int j = p_62865_.m_123341_() & 15;
--         int k = i & 15;
--         int l = p_62865_.m_123343_() & 15;
--         BlockState blockstate = levelchunksection.m_62986_(j, k, l, p_62866_);
--         if (blockstate == p_62866_) {
--            return null;
--         } else {
--            Block block = p_62866_.m_60734_();
--            this.f_187608_.get(Heightmap.Types.MOTION_BLOCKING).m_64249_(j, i, l, p_62866_);
--            this.f_187608_.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES).m_64249_(j, i, l, p_62866_);
--            this.f_187608_.get(Heightmap.Types.OCEAN_FLOOR).m_64249_(j, i, l, p_62866_);
--            this.f_187608_.get(Heightmap.Types.WORLD_SURFACE).m_64249_(j, i, l, p_62866_);
--            boolean flag1 = levelchunksection.m_188008_();
--            if (flag != flag1) {
--               this.f_62776_.m_7726_().m_7827_().m_75834_(p_62865_, flag1);
--            }
--
--            boolean flag2 = blockstate.m_155947_();
--            if (!this.f_62776_.f_46443_) {
--               blockstate.m_60753_(this.f_62776_, p_62865_, p_62866_, p_62867_);
--            } else if (!blockstate.m_60713_(block) && flag2) {
--               this.m_8114_(p_62865_);
--            }
--
--            if (!levelchunksection.m_62982_(j, k, l).m_60713_(block)) {
--               return null;
--            } else {
--               if (!this.f_62776_.f_46443_) {
--                  p_62866_.m_60696_(this.f_62776_, p_62865_, blockstate, p_62867_);
--               }
--
--               if (p_62866_.m_155947_()) {
--                  BlockEntity blockentity = this.m_5685_(p_62865_, LevelChunk.EntityCreationType.CHECK);
--                  if (blockentity == null) {
--                     blockentity = ((EntityBlock)block).m_142194_(p_62865_, p_62866_);
--                     if (blockentity != null) {
--                        this.m_142170_(blockentity);
--                     }
--                  } else {
--                     blockentity.m_155250_(p_62866_);
--                     this.m_156406_(blockentity);
--                  }
--               }
--
--               this.f_187603_ = true;
--               return blockstate;
--            }
--         }
--      }
 +    // CraftBukkit start
-+    public AtomicBoolean mohist$doPlace = new AtomicBoolean(true);
 +    @Nullable
 +    public BlockState m_6978_ ( BlockPos p_62865_, BlockState p_62866_, boolean p_62867_ )
 +    {
-+       // CraftBukkit end
-+       int i = p_62865_.m_123342_();
-+       LevelChunkSection levelchunksection = this.m_183278_(this.m_151564_(i));
-+       boolean flag = levelchunksection.m_188008_();
-+       if (flag && p_62866_.m_60795_()) {
-+          return null;
-+       } else {
-+          int j = p_62865_.m_123341_() & 15;
-+          int k = i & 15;
-+          int l = p_62865_.m_123343_() & 15;
-+          BlockState blockstate = levelchunksection.m_62986_(j, k, l, p_62866_);
-+          if (blockstate == p_62866_) {
-+             return null;
-+          } else {
-+             Block block = p_62866_.m_60734_();
-+             this.f_187608_.get(Heightmap.Types.MOTION_BLOCKING).m_64249_(j, i, l, p_62866_);
-+             this.f_187608_.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES).m_64249_(j, i, l, p_62866_);
-+             this.f_187608_.get(Heightmap.Types.OCEAN_FLOOR).m_64249_(j, i, l, p_62866_);
-+             this.f_187608_.get(Heightmap.Types.WORLD_SURFACE).m_64249_(j, i, l, p_62866_);
-+             boolean flag1 = levelchunksection.m_188008_();
-+             if (flag != flag1) {
-+                this.f_62776_.m_7726_().m_7827_().m_75834_(p_62865_, flag1);
-+             }
-+
-+             boolean flag2 = blockstate.m_155947_();
-+             if (!this.f_62776_.f_46443_) {
-+                blockstate.m_60753_(this.f_62776_, p_62865_, p_62866_, p_62867_);
-+             } else if ((!blockstate.m_60713_(block) || !p_62866_.m_155947_()) && flag2) {
-+                this.m_8114_(p_62865_);
-+             }
-+
-+             if (!levelchunksection.m_62982_(j, k, l).m_60713_(block)) {
-+                return null;
-+             } else {
-+                // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer.
-+                // Prevents blocks such as TNT from activating when cancelled.
-+                if ( !this.f_62776_.f_46443_ && mohist$doPlace.getAndSet(true) && ( !this.f_62776_.captureBlockSnapshots || block instanceof EntityBlock ) ) {
-+                   p_62866_.m_60696_(this.f_62776_, p_62865_, blockstate, p_62867_);
-+                }
-+
-+                if (p_62866_.m_155947_()) {
-+                   BlockEntity blockentity = this.m_5685_(p_62865_, LevelChunk.EntityCreationType.CHECK);
-+                   if (blockentity == null) {
-+                      blockentity = ((EntityBlock)block).m_142194_(p_62865_, p_62866_);
-+                      if (blockentity != null) {
-+                         this.m_142170_(blockentity);
-+                      }
-+                   } else {
-+                      blockentity.m_155250_(p_62866_);
-+                      this.m_156406_(blockentity);
-+                   }
-+                }
-+
-+                this.f_187603_ = true;
-+                return blockstate;
-+             }
-+          }
-+       }
++        return this.setBlockState( p_62865_, p_62866_, p_62867_, true );
 +    }
 +
 +    @Nullable
-+    public BlockState setBlockState ( BlockPos pPos, BlockState pState, boolean pIsMoving, boolean doPlace)
++    public BlockState setBlockState ( BlockPos p_62865_, BlockState p_62866_, boolean p_62867_, boolean doPlace )
 +    {
-+       mohist$doPlace.set(doPlace);
-+       try {
-+          return m_6978_(pPos, pState, pIsMoving);
-+       } finally {
-+          mohist$doPlace.set(true);
-+       }
-    }
++        // CraftBukkit end
+       int i = p_62865_.m_123342_();
+       LevelChunkSection levelchunksection = this.m_183278_(this.m_151564_(i));
+       boolean flag = levelchunksection.m_188008_();
+@@ -233,14 +_,16 @@
+             boolean flag2 = blockstate.m_155947_();
+             if (!this.f_62776_.f_46443_) {
+                blockstate.m_60753_(this.f_62776_, p_62865_, p_62866_, p_62867_);
+-            } else if (!blockstate.m_60713_(block) && flag2) {
++         } else if ((!blockstate.m_60713_(block) || !p_62866_.m_155947_()) && flag2) {
+                this.m_8114_(p_62865_);
+             }
  
-    /** @deprecated */
+             if (!levelchunksection.m_62982_(j, k, l).m_60713_(block)) {
+                return null;
+             } else {
+-               if (!this.f_62776_.f_46443_) {
++            // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer.
++            // Prevents blocks such as TNT from activating when cancelled.
++            if ( !this.f_62776_.f_46443_ && doPlace && ( !this.f_62776_.captureBlockSnapshots || block instanceof EntityBlock ) ) {
+                   p_62866_.m_60696_(this.f_62776_, p_62865_, blockstate, p_62867_);
+                }
+ 
 @@ -283,6 +_,10 @@
     @Nullable
     public BlockEntity m_5685_(BlockPos p_62868_, LevelChunk.EntityCreationType p_62869_) {

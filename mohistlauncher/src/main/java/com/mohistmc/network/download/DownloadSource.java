@@ -19,32 +19,28 @@
 package com.mohistmc.network.download;
 
 import com.mohistmc.config.MohistConfigUtil;
-import com.mohistmc.tools.ConnectionUtil;
+import com.mohistmc.util.i18n.i18n;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
 
-@Getter
 @ToString
 @AllArgsConstructor
 public enum DownloadSource {
 
     MOHIST("https://maven.mohistmc.com/"),
-    GITHUB("https://mohistmc.github.io/maven/");
+    CHINA("http://s1.devicloud.cn:25119/"),
+    GITHUB("https://mavenmirror.mohistmc.com/");
 
-    public static final DownloadSource defaultSource = MOHIST;
-    public final String url;
+    public static final DownloadSource defaultSource = i18n.isCN() ? CHINA : MOHIST;
+    @Getter
+    final
+    String url;
 
     public static DownloadSource get() {
-        String ds = MohistConfigUtil.LIBRARIES_DOWNLOADSOURCE();
+        String ds = MohistConfigUtil.defaultSource();
         for (DownloadSource me : DownloadSource.values()) {
             if (me.name().equalsIgnoreCase(ds)) {
-                if (!ConnectionUtil.canAccess(me.url.replace("releases/", ""))) {
-                        if (!ConnectionUtil.canAccess(DownloadSource.MOHIST.url)) {
-                            return GITHUB;
-                        }
-                    return GITHUB;
-                }
                 return me;
             }
         }

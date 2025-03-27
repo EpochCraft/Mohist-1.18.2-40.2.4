@@ -2,9 +2,10 @@ package org.bukkit.plugin.java;
 
 import com.google.common.io.ByteStreams;
 import com.mohistmc.bukkit.pluginfix.PluginFixManager;
-import com.mohistmc.bukkit.remapping.ClassLoaderRemapper;
-import com.mohistmc.bukkit.remapping.Remapper;
-import com.mohistmc.bukkit.remapping.RemappingClassLoader;
+import com.mohistmc.remapper.McVersion;
+import com.mohistmc.remapper.v2.ClassLoaderRemapper;
+import com.mohistmc.remapper.v2.MohistRemapper;
+import com.mohistmc.remapper.v2.RemappingClassLoader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -176,7 +177,6 @@ public final class PluginClassLoader extends URLClassLoader implements Remapping
                     byteSource = () -> {
                         try (InputStream is = connection.getInputStream()) {
                             byte[] classBytes = ByteStreams.toByteArray(is);
-                            classBytes = Remapper.SWITCH_TABLE_FIXER.apply(classBytes);
                             classBytes = loader.server.getUnsafe().processClass(description, path, classBytes);
                             classBytes = PluginFixManager.injectPluginFix(name, classBytes); // Mohist - Inject plugin fix
 
@@ -250,7 +250,8 @@ public final class PluginClassLoader extends URLClassLoader implements Remapping
     @Override
     public ClassLoaderRemapper getRemapper() {
         if (remapper == null) {
-            remapper = Remapper.createClassLoaderRemapper(this);
+            MohistRemapper.init(McVersion.v1_18_2);
+            remapper = MohistRemapper.createClassLoaderRemapper(this);
         }
         return remapper;
     }

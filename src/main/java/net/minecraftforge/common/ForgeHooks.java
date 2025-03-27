@@ -653,11 +653,11 @@ public class ForgeHooks
             boolean eventResult = false;
             if (blockSnapshots.size() > 1)
             {
-                eventResult = ForgeEventFactory.onMultiBlockPlace(player, blockSnapshots, side, context.getHand());
+                eventResult = ForgeEventFactory.onMultiBlockPlace(player, blockSnapshots, side);
             }
             else if (blockSnapshots.size() == 1)
             {
-                eventResult = ForgeEventFactory.onBlockPlace(player, blockSnapshots.get(0), side, context.getHand());
+                eventResult = ForgeEventFactory.onBlockPlace(player, blockSnapshots.get(0), side);
             }
 
             if (eventResult)

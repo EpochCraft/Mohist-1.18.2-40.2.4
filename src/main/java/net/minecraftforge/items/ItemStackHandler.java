@@ -16,7 +16,7 @@ import javax.annotation.Nonnull;
 
 public class ItemStackHandler implements IItemHandler, IItemHandlerModifiable, INBTSerializable<CompoundTag>
 {
-    public NonNullList<ItemStack> stacks;
+    protected NonNullList<ItemStack> stacks;
 
     public ItemStackHandler()
     {

@@ -79,14 +79,7 @@ public class JarInJarDependencyLocator extends AbstractJarFileDependencyLocator
             final Map<String, ?> outerFsArgs = ImmutableMap.of("packagePath", pathInModFile);
             final FileSystem zipFS = FileSystems.newFileSystem(filePathUri, outerFsArgs);
             final Path pathInFS = zipFS.getPath("/");
-            final IModFile.Type parentType = file.getType();
-            final String modType;
-            if (parentType == IModFile.Type.LIBRARY || parentType == IModFile.Type.LANGPROVIDER) {
-                modType = IModFile.Type.LIBRARY.name();
-            } else {
-                modType = IModFile.Type.GAMELIBRARY.name();
-            }
-            return createMod(modType, pathInFS);
+            return createMod(pathInFS);
         }
         catch (Exception e)
         {

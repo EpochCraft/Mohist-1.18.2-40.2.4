@@ -22,22 +22,19 @@
  import java.util.function.Supplier;
  import javax.annotation.Nullable;
  import net.minecraft.CrashReport;
-@@ -19,6 +_,10 @@
+@@ -19,6 +_,8 @@
  import net.minecraft.ReportedException;
  import net.minecraft.core.NonNullList;
  import net.minecraft.core.Registry;
 +import net.minecraft.network.chat.Component;
-+import net.minecraft.network.chat.TextComponent;
 +import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
-+import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.level.ServerPlayer;
  import net.minecraft.util.Mth;
  import net.minecraft.world.Container;
-@@ -28,6 +_,14 @@
+@@ -28,6 +_,13 @@
  import net.minecraft.world.item.ItemStack;
  import net.minecraft.world.level.block.Block;
  import net.minecraft.world.level.block.entity.BlockEntity;
-+import net.minecraftforge.registries.ForgeRegistries;
 +import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventory;
 +import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftInventoryView;
 +import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
@@ -48,39 +45,59 @@
  import org.slf4j.Logger;
  
  public abstract class AbstractContainerMenu {
-@@ -59,6 +_,39 @@
+@@ -59,6 +_,59 @@
     private ContainerSynchronizer f_150397_;
     private boolean f_150398_;
  
 +   // CraftBukkit star
++   private CraftInventoryView bukkitEntity = null;
 +   public boolean checkReachable = true;
 +   // Mohist start
 +   public InventoryView bukkitView = null;
 +   public InventoryView getBukkitView(){
 +      return bukkitView;
 +   }
++
++   public void setBukkitView(InventoryView iv) {
++      bukkitView = iv;
++   }
 +   // Mohist end
 +   public void transferTo(AbstractContainerMenu other, org.bukkit.craftbukkit.v1_18_R2.entity.CraftHumanEntity player) {
 +      InventoryView source = this.getBukkitView(), destination = other.getBukkitView();
-+      ((CraftInventory) source.getTopInventory()).getInventory().onClose(player);
-+      ((CraftInventory) source.getBottomInventory()).getInventory().onClose(player);
-+      ((CraftInventory) destination.getTopInventory()).getInventory().onOpen(player);
-+      ((CraftInventory) destination.getBottomInventory()).getInventory().onOpen(player);
-+   }
++      if (source != null) {
++         try {
++            ((CraftInventory) source.getTopInventory()).getInventory().onClose(player);
++         } catch (AbstractMethodError ex) {
++            // modded
++         }
 +
-+   private Component title;
-+   public Component getTitle() {
-+      // Mohist: null title -> empty title
-+      if (this.title == null) {
-+         if (this.f_38843_ != null && this.f_38843_.getRegistryName() != null) {
-+            return new TextComponent(this.f_38843_.getRegistryName().toString());
-+         } else {
-+            return new TextComponent(this.toString());
++         try {
++            ((CraftInventory) source.getBottomInventory()).getInventory().onClose(player);
++         } catch (AbstractMethodError ex) {
++            // modded
 +         }
 +      }
++      if (destination != null) {
++         try {
++            ((CraftInventory) destination.getTopInventory()).getInventory().onOpen(player);
++         } catch (AbstractMethodError ex) {
++            // modded
++         }
++
++         try {
++            ((CraftInventory) destination.getBottomInventory()).getInventory().onOpen(player);
++         } catch (AbstractMethodError ex) {
++            // modded
++         }
++      }
++   }
++   private Component title;
++   public Component getTitle() {
++      Preconditions.checkState(this.title != null, "Title not set");
 +      return this.title;
 +   }
 +   public void setTitle(Component title) {
++      Preconditions.checkState(this.title == null, "Title already set");
 +      this.title = title;
 +   }
 +   // CraftBukkit end
@@ -100,15 +117,6 @@
           for(ContainerListener containerlistener : this.f_38848_) {
              containerlistener.m_7934_(this, p_150408_, itemstack1);
           }
-@@ -285,7 +_,7 @@
-    }
- 
-    public ItemStack m_7648_(Player p_38941_, int p_38942_) {
--      return this.f_38839_.get(p_38942_).m_7993_();
-+      return ItemStack.f_41583_; // CraftBukkit - previous implementation was useless and broken
-    }
- 
-    public void m_150399_(int p_150400_, int p_150401_, ClickType p_150402_, Player p_150403_) {
 @@ -333,7 +_,7 @@
              }
           } else if (this.f_38846_ == 2) {
@@ -180,19 +188,6 @@
              }
  
              this.m_38951_();
-@@ -374,8 +_,11 @@
-          if (p_150431_ == -999) {
-             if (!this.m_142621_().m_41619_()) {
-                if (clickaction == ClickAction.PRIMARY) {
--                  p_150434_.m_36176_(this.m_142621_(), true);
-+                  // CraftBukkit start
-+                  ItemStack carried = this.m_142621_();
-                   this.m_142503_(ItemStack.f_41583_);
-+                  p_150434_.m_36176_(carried, true);
-+                  // CraftBukkit start
-                } else {
-                   p_150434_.m_36176_(this.m_142621_().m_41620_(1), true);
-                }
 @@ -434,6 +_,21 @@
              }
  
@@ -206,7 +201,7 @@
 +                     ((ServerPlayer) p_150434_).f_8906_.m_141995_(new ClientboundContainerSetSlotPacket(this.f_38840_, this.m_182425_(), 0, this.m_38853_(0).m_7993_()));
 +                  }
 +               } catch ( AbstractMethodError error ){
-+                  f_207773_.error(error.getMessage());
++                  MohistMC.LOGGER.error( error );
 +                  ((ServerPlayer) p_150434_).f_8906_.m_141995_(new ClientboundContainerSetSlotPacket(this.f_38840_, this.m_182425_(), 0, this.m_38853_(0).m_7993_()));
 +
 +               }
@@ -260,19 +255,15 @@
        }
  
        p_38925_.m_41769_(p_38926_);
-@@ -749,6 +_,11 @@
+@@ -795,7 +_,21 @@
     }
  
-    public ItemStack m_142621_() {
+    public int m_182425_() {
 +      // CraftBukkit start
 +      if (this.f_150393_.m_41619_()) {
 +         this.m_142503_(ItemStack.f_41583_);
 +      }
 +      // CraftBukkit end
-       return this.f_150393_;
-    }
- 
-@@ -798,4 +_,13 @@
        this.f_182405_ = this.f_182405_ + 1 & 32767;
        return this.f_182405_;
     }

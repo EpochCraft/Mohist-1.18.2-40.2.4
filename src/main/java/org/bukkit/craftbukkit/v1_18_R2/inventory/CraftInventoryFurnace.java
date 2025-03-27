@@ -42,7 +42,6 @@ public class CraftInventoryFurnace extends CraftInventory implements FurnaceInve
 
     @Override
     public Furnace getHolder() {
-        org.bukkit.inventory.InventoryHolder owner = inventory.getOwner();
-        return owner instanceof Furnace ? (Furnace) owner : null;
+        return (Furnace) inventory.getOwner();
     }
 }

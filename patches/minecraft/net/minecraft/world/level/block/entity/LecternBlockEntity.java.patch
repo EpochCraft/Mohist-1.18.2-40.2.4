@@ -125,7 +125,7 @@
        public void m_6211_() {
        }
 +
-+      public LecternBlockEntity getLectern() {
++      public MenuProvider getLectern() {
 +         return LecternBlockEntity.this;
 +      }
     };

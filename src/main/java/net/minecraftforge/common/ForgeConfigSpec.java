@@ -24,7 +24,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -56,15 +55,13 @@ import com.google.common.collect.ObjectArrays;
  */
 public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfig> implements IConfigSpec<ForgeConfigSpec>//TODO: Remove extends and pipe everything through getSpec/getValues?
 {
-    private final Map<List<String>, String> levelComments;
-    private final Map<List<String>, String> levelTranslationKeys;
+    private Map<List<String>, String> levelComments;
+    private Map<List<String>, String> levelTranslationKeys;
 
-    private final UnmodifiableConfig values;
+    private UnmodifiableConfig values;
     private Config childConfig;
 
     private boolean isCorrecting = false;
-
-    private static final Pattern WINDOWS_NEWLINE = Pattern.compile("\r\n");
 
     private ForgeConfigSpec(UnmodifiableConfig storage, UnmodifiableConfig values, Map<List<String>, String> levelComments, Map<List<String>, String> levelTranslationKeys) {
         super(storage);
@@ -126,9 +123,11 @@ public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfi
 
     private void resetCaches(final Iterable<Object> configValues) {
         configValues.forEach(value -> {
-            if (value instanceof ConfigValue<?> configValue) {
+            if (value instanceof ConfigValue) {
+                final ConfigValue<?> configValue = (ConfigValue<?>) value;
                 configValue.clearCache();
-            } else if (value instanceof Config innerConfig) {
+            } else if (value instanceof Config) {
+                final Config innerConfig = (Config) value;
                 this.resetCaches(innerConfig.valueMap().values());
             }
         });
@@ -267,12 +266,15 @@ public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfi
 
     private boolean stringsMatchIgnoringNewlines(@Nullable Object obj1, @Nullable Object obj2)
     {
-        if(obj1 instanceof String string1 && obj2 instanceof String string2)
+        if(obj1 instanceof String && obj2 instanceof String)
         {
-            if (!string1.isEmpty() && !string2.isEmpty())
+            String string1 = (String) obj1;
+            String string2 = (String) obj2;
+
+            if(string1.length() > 0 && string2.length() > 0)
             {
-                return WINDOWS_NEWLINE.matcher(string1).replaceAll("\n")
-                        .equals(WINDOWS_NEWLINE.matcher(string2).replaceAll("\n"));
+                return string1.replaceAll("\r\n", "\n")
+                        .equals(string2.replaceAll("\r\n", "\n"));
 
             }
         }
@@ -284,10 +286,10 @@ public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfi
     {
         private final Config storage = Config.of(LinkedHashMap::new, InMemoryFormat.withUniversalSupport()); // Use LinkedHashMap for consistent ordering
         private BuilderContext context = new BuilderContext();
-        private final Map<List<String>, String> levelComments = new HashMap<>();
-        private final Map<List<String>, String> levelTranslationKeys = new HashMap<>();
-        private final List<String> currentPath = new ArrayList<>();
-        private final List<ConfigValue<?>> values = new ArrayList<>();
+        private Map<List<String>, String> levelComments = new HashMap<>();
+        private Map<List<String>, String> levelTranslationKeys = new HashMap<>();
+        private List<String> currentPath = new ArrayList<>();
+        private List<ConfigValue<?>> values = new ArrayList<>();
         private boolean hasInvalidComment = false;
 
         //Object
@@ -373,7 +375,7 @@ public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfi
                         LogManager.getLogger().debug(CORE, "List on key {} is deemed to need correction. It is null, not a list, or an empty list. Modders, consider defineListAllowEmpty?", path.get(path.size() - 1));
                         return getDefault();
                     }
-                    List<?> list = new ArrayList<>((List<?>) value);
+                    List<?> list = Lists.newArrayList((List<?>) value);
                     list.removeIf(elementValidator.negate());
                     if (list.isEmpty()) {
                         LogManager.getLogger().debug(CORE, "List on key {} is deemed to need correction. It failed validation.", path.get(path.size() - 1));
@@ -393,7 +395,7 @@ public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfi
                         LogManager.getLogger().debug(CORE, "List on key {} is deemed to need correction, as it is null or not a list.", path.get(path.size() - 1));
                         return getDefault();
                     }
-                    List<?> list = new ArrayList<>((List<?>) value);
+                    List<?> list = Lists.newArrayList((List<?>) value);
                     list.removeIf(elementValidator.negate());
                     if (list.isEmpty()) {
                         LogManager.getLogger().debug(CORE, "List on key {} is deemed to need correction. It failed validation.", path.get(path.size() - 1));
@@ -694,7 +696,7 @@ public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfi
     }
 
     @SuppressWarnings("unused")
-    public static class Range<V extends Comparable<? super V>> implements Predicate<Object>
+    private static class Range<V extends Comparable<? super V>> implements Predicate<Object>
     {
         private final Class<? extends V> clazz;
         private final V min;
@@ -830,7 +832,7 @@ public class ForgeConfigSpec extends UnmodifiableConfigWrapper<UnmodifiableConfi
 
         public List<String> getPath()
         {
-            return new ArrayList<>(path);
+            return Lists.newArrayList(path);
         }
 
         @Override
